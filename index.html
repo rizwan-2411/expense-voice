@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Expense Recorder Voice</title>
+<style>
+body{font-family:Arial,sans-serif;background:#f5f8f5;color:#18231d;margin:0;padding:18px}main{max-width:560px;margin:auto;background:white;border:1px solid #dfe7e1;border-radius:16px;padding:18px}h1{font-size:22px}p{line-height:1.5;color:#65736b}select,textarea,button{width:100%;box-sizing:border-box;padding:12px;margin:6px 0;border:1px solid #cbd7ce;border-radius:10px;font:inherit}textarea{min-height:130px}button{background:#236b45;color:white;border:0;font-weight:bold}button.secondary{background:#e7f3eb;color:#236b45}#status{margin-top:10px;color:#65736b;white-space:pre-wrap}
+</style></head><body><main>
+<h1>🎙 Expense Recorder Voice</h1><p>Speak your expense, check the recognized text, then send it back to the Expense Recorder.</p>
+<label>Recognition language</label><select id="lang"><option value="en-IN">English (India)</option><option value="hi-IN">Hindi</option><option value="ur-PK">Urdu</option></select>
+<textarea id="text" placeholder="Recognized speech appears here. You can edit it."></textarea>
+<button onclick="listen()">Start / retry listening</button><button class="secondary" onclick="sendBack()">Send to Expense Recorder</button><div id="status">Tap Start / retry listening if it does not begin automatically.</div>
+</main><script>
+let rec=null, finalText='';const $=id=>document.getElementById(id);const params=new URLSearchParams(location.search);if(params.get('lang'))$('lang').value=params.get('lang');
+function say(t){$('status').textContent=t}
+function listen(){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){say('Speech recognition is not supported in this browser. Try updated Chrome.');return}try{if(rec){try{rec.stop()}catch(e){}}rec=new SR();rec.lang=$('lang').value;rec.continuous=true;rec.interimResults=true;finalText=$('text').value.trim();rec.onresult=e=>{let interim='';for(let i=e.resultIndex;i<e.results.length;i++){const t=e.results[i][0].transcript;if(e.results[i].isFinal)finalText+=(finalText?' ':'')+t;else interim+=t}$('text').value=(finalText+(interim?' '+interim:'')).trim()};rec.onerror=e=>say('Voice error: '+e.error+'. Check microphone permission or type the words.');rec.onend=()=>say('Listening stopped. Check the text, then send it back.');rec.start();say('Listening… speak now.')}catch(e){say('Could not start. Tap Start / retry listening and allow microphone if asked.')}}
+function sendBack(){const text=$('text').value.trim();if(!text){say('No text yet. Speak or type first.');return}if(window.opener&&!window.opener.closed){window.opener.postMessage({type:'expense-recorder-voice-text',text},'*');say('Text sent back. Return to the Expense Recorder tab.')}else say('Expense Recorder tab not found. Open this page using the app Speak button.')}
+window.addEventListener('load',()=>{try{listen()}catch(e){}});
+</script></body></html>
